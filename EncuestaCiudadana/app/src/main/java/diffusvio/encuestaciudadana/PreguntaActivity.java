@@ -12,16 +12,11 @@ import android.widget.CheckBox;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.ScrollView;
+
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import database.Encuesta;
-import database.EncuestaCiudadanaContract;
-import database.EncuestaDs;
 import database.EncuestaRespuestas;
 import database.EncuestaRespuestasDs;
 import database.Pregunta;
@@ -124,6 +119,7 @@ public class PreguntaActivity extends ActionBarActivity {
         TextView lblPregunta = (TextView)findViewById(R.id.lblPregunta);
         lblPregunta.setText(mPregunta.getTexto());
         RespuestasDs respuestasDs = new RespuestasDs(this);
+
         respuestasDs.openDatabase();
         ArrayList<Respuesta> respuestas = respuestasDs.getRespuestasByPregunta(mPregunta.getId());
 
