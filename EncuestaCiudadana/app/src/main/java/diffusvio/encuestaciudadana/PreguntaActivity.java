@@ -111,7 +111,7 @@ public class PreguntaActivity extends ActionBarActivity {
                 }
             });
 
-        }else{}
+        }else{
             btnFinish.setVisibility(View.VISIBLE);
             btnSiguiente.setVisibility(View.GONE);
         }
@@ -145,7 +145,7 @@ public class PreguntaActivity extends ActionBarActivity {
                 }
             });
             view.addView(radioGroup);
-        }else {
+        }else{
             for (Respuesta respuesta : respuestas) {
                 CheckBox checkBox = new CheckBox(this);
                 checkBox.setText(respuesta.getTexto());
