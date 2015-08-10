@@ -68,4 +68,10 @@ public class RespuestasDs {
         respuesta.setIndice(cursor.getInt(5));
         return  respuesta;
     }
+
+    public void dropTable(){
+        SQLiteDatabase database = helper.getWritableDatabase();
+        database.execSQL(EncuestaCiudadanaDbHelper.DROP_TABLE_RESPUESTAS);
+        database.execSQL(EncuestaCiudadanaDbHelper.CREATE_TABLE_RESPUESTAS);
+    }
 }

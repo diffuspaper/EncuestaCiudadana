@@ -32,7 +32,7 @@ public class SplashScreen extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
         getSupportActionBar().hide();
-        final ArrayList<Integer> configure = new ArrayList<>();
+       /*final ArrayList<Integer> configure = new ArrayList<>();
 
         if(!isConfigured()) {
             if (isNetworkConnected()) {
@@ -100,7 +100,11 @@ public class SplashScreen extends ActionBarActivity {
             Intent intent= new Intent(SplashScreen.this, Login.class);
             startActivity(intent);
             finish();
-        }
+        }*/
+
+        Intent intent= new Intent(SplashScreen.this, Login.class);
+        startActivity(intent);
+        finish();
     }
 
     private boolean isConfigured(){

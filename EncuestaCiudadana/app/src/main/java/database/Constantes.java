@@ -7,5 +7,5 @@ public class Constantes {
       /*
         Cambiar aquí
        */
-    public static final String SERVIDOR = "http://windropple.com/encuesta/";
+    public static final String SERVIDOR = "http://windropple.com/pol_encuesta/index.php/WebService/";
 }

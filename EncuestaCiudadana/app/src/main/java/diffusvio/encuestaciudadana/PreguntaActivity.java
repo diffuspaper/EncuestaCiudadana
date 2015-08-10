@@ -1,7 +1,10 @@
 package diffusvio.encuestaciudadana;
 
+import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,7 +19,10 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
+
 import database.EncuestaRespuestas;
 import database.EncuestaRespuestasDs;
 import database.Pregunta;
@@ -29,164 +35,109 @@ public class PreguntaActivity extends ActionBarActivity {
 
 
     ArrayList<Integer> selecteds = new ArrayList<>();
-    Pregunta mPregunta;
+    ArrayList<Pregunta> preguntas = new ArrayList<>();
+    HashMap<Integer, ArrayList<Integer>> hashMap = new HashMap<>();
     int uniqueId;
+    int id = 0;
     int indice = 0;
+    PreguntaFragment preguntaFragment;
+    Button btnSiguiente, btnAtras;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pregunta);
         Bundle bundle = getIntent().getExtras();
 
-        indice = bundle.getInt("indice");
-        uniqueId = bundle.getInt("unique_id");
-        Log.i("UniqueId", ""+uniqueId);
-        Log.i("Indice", ""+ indice);
-
-        final PreguntasDs preguntasDs = new PreguntasDs(this);
+        PreguntasDs preguntasDs = new PreguntasDs(this);
         preguntasDs.openDatabase();
-        mPregunta = preguntasDs.getPreguntaByIndice(indice);
-        Pregunta nextPregunta = preguntasDs.getPreguntaByIndice(indice + 1);
+        preguntas = preguntasDs.getPreguntas();
         preguntasDs.close();
 
-
-        Button btnSiguiente = (Button) findViewById(R.id.btnSiguiente);
-        Button btnFinish = (Button) findViewById(R.id.btnFinish);
-
-        btnFinish.setOnClickListener(new View.OnClickListener() {
+        btnSiguiente = (Button)findViewById(R.id.btnSiguiente);
+        btnAtras = (Button)findViewById(R.id.btnAtras);
+        btnAtras.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (insertSelecteds()) {
-                    finishEncuesta();
-                } else {
-                    Toast.makeText(PreguntaActivity.this, "Por favor seleccione por lo menos una respuesta", Toast.LENGTH_LONG).show();
+                indice--;
+                id = preguntas.get(indice).getId();
+                setFragmentData(id);
+            }
+        });
+        btnSiguiente.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(insertSelecteds()) {
+                    indice++;
+                    if (preguntas.size() > indice) {
+                        Pregunta preg  = preguntas.get(indice);
+
+
+                        if(preg.getIdPreguntaPadre()!= 0){
+                            ArrayList<Integer> values = hashMap.get(preg.getIdPreguntaPadre());
+                            if(values.contains(preg.getIdRespuestaPadre())){
+                                setFragmentData(preg.getId());
+                            }else{
+                                v.performClick();
+                            }
+                        }else {
+                            setFragmentData(preg.getId());
+                        }
+                    } else {
+                        finishEncuesta();
+                    }
+                }else{
+                    Toast.makeText(PreguntaActivity.this, "Aun no selecciona alguna respuesta", Toast.LENGTH_LONG).show();
                 }
             }
         });
 
-        if (nextPregunta != null){
-
-            btnFinish.setVisibility(View.GONE);
-            btnSiguiente.setVisibility(View.VISIBLE);
-
-            btnSiguiente.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (insertSelecteds()) {
-                        PreguntasDs preguntasDs1 = new PreguntasDs(PreguntaActivity.this);
-                        preguntasDs1.openDatabase();
-
-                        EncuestaRespuestasDs encuestaRespuestasDs = new EncuestaRespuestasDs(PreguntaActivity.this);
-                        encuestaRespuestasDs.openDatabase();
-                        boolean takeDown = false;
-                        while(true){
-                            indice++;
-                            Pregunta pregunta = preguntasDs1.getPreguntaByIndice(indice);
-                            if(pregunta != null) {
-                                if (pregunta.getIdPreguntaPadre() > 0) {
-                                    EncuestaRespuestas encuestaRespuestas = encuestaRespuestasDs.getEncuestaRespuestaRequired(uniqueId, pregunta.getIdPreguntaPadre(), pregunta.getIdRespuestaPadre());
-                                    if (encuestaRespuestas != null) {
-                                        break;
-                                    }
-                                } else {
-                                    break;
-                                }
-                            }else{
-                                takeDown = true;
-                                break;
-                            }
-                        }
-                        if(takeDown){
-                            finishEncuesta();
-                        }else {
-                            Intent intent = new Intent(PreguntaActivity.this, PreguntaActivity.class);
-                            intent.putExtra("indice", indice);
-                            intent.putExtra("unique_id", uniqueId);
-                            startActivity(intent);
-                            finish();
-                        }
-                    } else {
-                        Toast.makeText(PreguntaActivity.this, "Por favor seleccione por lo menos una respuesta", Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-
-        }else{
-            btnFinish.setVisibility(View.VISIBLE);
-            btnSiguiente.setVisibility(View.GONE);
+        uniqueId = bundle.getInt("unique_id");
+        if(preguntas.size() > 0){
+            id = preguntas.get(indice).getId();
+            setFragmentData(id);
         }
-
-        TextView lblPregunta = (TextView)findViewById(R.id.lblPregunta);
-        lblPregunta.setText(mPregunta.getTexto());
-        RespuestasDs respuestasDs = new RespuestasDs(this);
-
-        respuestasDs.openDatabase();
-        ArrayList<Respuesta> respuestas = respuestasDs.getRespuestasByPregunta(mPregunta.getId());
-
-        LinearLayout view = (LinearLayout)findViewById(R.id.viewRespuestas);
-        if(mPregunta.getTipo() == 1){
-
-            RadioGroup radioGroup = new RadioGroup(this);
-            for (Respuesta respuesta : respuestas) {
-                RadioButton radioButton = new RadioButton(this);
-                radioButton.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                radioButton.setText(respuesta.getTexto());
-                radioButton.setTag(respuesta.getId());
-                radioButton.setTextSize(12);
-                radioButton.setTextColor(Color.WHITE);
-                radioGroup.addView(radioButton);
-            }
-            radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(RadioGroup group, int checkedId) {
-                    selecteds.clear();
-                    RadioButton button = (RadioButton)group.findViewById(checkedId);
-                    selecteds.add((Integer)button.getTag());
-                }
-            });
-            view.addView(radioGroup);
-        }else{
-            for (Respuesta respuesta : respuestas) {
-                CheckBox checkBox = new CheckBox(this);
-                checkBox.setText(respuesta.getTexto());
-                checkBox.setTextSize(12);
-                checkBox.setTextColor(Color.WHITE);
-                checkBox.setTag(respuesta.getId());
-                checkBox.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        CheckBox mCheckBox = (CheckBox)v;
-                        if(mCheckBox.isChecked()){
-                            selecteds.add((Integer)mCheckBox.getTag());
-                        }else {
-                            selecteds.remove((Integer)mCheckBox.getTag());
-                        }
-                    }
-                });
-                view.addView(checkBox);
-            }
+    }
+    void setFragmentData(int id){
+        this.id = id;
+        btnAtras.setEnabled(true);
+        if(indice == 0){
+            btnAtras.setEnabled(false);
         }
-
-
+        preguntaFragment = (PreguntaFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_pregunta);
+        if(preguntaFragment != null){
+            ArrayList<Integer> values = null;
+            if(hashMap.containsKey(id)) {
+                values = hashMap.get(id);
+                Log.i("TAGDEBUG", "La contuve " + values.size());
+            }
+            preguntaFragment.updateViewContent(id, values);
+        }
     }
     void finishEncuesta(){
+        EncuestaRespuestasDs ds = new EncuestaRespuestasDs(this);
+        ds.openDatabase();
+        for (Integer integer: hashMap.keySet()){
+            selecteds = hashMap.get(integer);
+            for(Integer value: selecteds) {
+                EncuestaRespuestas encuestaRespuestas = new EncuestaRespuestas();
+                encuestaRespuestas.setIdRespuesta(value);
+                encuestaRespuestas.setIdPregunta(integer);
+                encuestaRespuestas.setUnique_id(uniqueId);
+                long inserted = ds.insertEncuestaRespuestas(encuestaRespuestas);
+            }
+        }
+        ds.close();
         finish();
     }
     boolean insertSelecteds(){
-        if(selecteds.size() > 0) {
-            EncuestaRespuestasDs ds = new EncuestaRespuestasDs(this);
-            ds.openDatabase();
-            long inserted = 0;
-            for (Integer value : selecteds) {
-                EncuestaRespuestas encuestaRespuestas = new EncuestaRespuestas();
-                encuestaRespuestas.setIdRespuesta(value);
-                encuestaRespuestas.setIdPregunta(mPregunta.getId());
-                encuestaRespuestas.setUnique_id(uniqueId);
-                inserted = ds.insertEncuestaRespuestas(encuestaRespuestas);
-                Log.i("Inserted respuesta" , ""+inserted);
+        if(preguntaFragment != null) {
+            selecteds = preguntaFragment.getSelecteds();
+            if (selecteds.size() > 0) {
+                hashMap.put(id, selecteds);
+                return true;
+            } else {
+                return false;
             }
-            ds.close();
-            return true;
         }else{
             return false;
         }

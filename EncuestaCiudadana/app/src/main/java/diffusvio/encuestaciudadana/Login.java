@@ -62,7 +62,7 @@ public class Login extends ActionBarActivity {
             final ProgressDialog dialog = ProgressDialog.show(this, "",
                     "Inicianso sesión, espere...", true);
             dialog.show();
-            client.post(Constantes.SERVIDOR + "login.php", params, new JsonHttpResponseHandler() {
+            client.post(Constantes.SERVIDOR + "login_user", params, new JsonHttpResponseHandler() {
 
                 @Override
                 public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONArray errorResponse) {
@@ -85,18 +85,18 @@ public class Login extends ActionBarActivity {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                     try {
-                        String res = response.getString("status");
                         dialog.dismiss();
-                        if (res.equals("success")) {
+                        if (response.has("id")) {
                             Toast.makeText(Login.this, "Bienvenido " + response.getString("usuario"), Toast.LENGTH_LONG).show();
                             Intent intent= new Intent(Login.this, MainActivity.class);
-                            intent.putExtra("id_usuario", response.getInt("id_usuario"));
+                            intent.putExtra("id_usuario", response.getInt("id"));
                             startActivity(intent);
                             finish();
                         } else {
                             Toast.makeText(Login.this, "Usuario o contraseña incorrectos", Toast.LENGTH_LONG).show();
                         }
                     } catch (JSONException ex) {
+                        dialog.dismiss();
                         Toast.makeText(Login.this, "Vuelva a intentarlo", Toast.LENGTH_LONG).show();
                     }
                 }
